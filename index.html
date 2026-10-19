@@ -1,11 +1,329 @@
 <!DOCTYPE html>
-<html lang="eng">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portfolio Page</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Matthew Brady | Portfolio</title>
+  <meta name="description" content="Portfolio of Matthew Brady, Kansas City: technology projects, writing, and certifications.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f7f6f2;
+      --surface: #ffffff;
+      --text: #1d2233;
+      --muted: #5a6075;
+      --accent: #2f4a8a;
+      --accent-soft: #e6ebf6;
+      --gold: #b08a3e;
+      --border: #e2e0d8;
+      --hero-bg: #141a2e;
+      --hero-text: #eef0f7;
+      --hero-muted: #b9bfd4;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #10131f;
+        --surface: #181c2c;
+        --text: #e8eaf2;
+        --muted: #a3a9bf;
+        --accent: #9bb3f0;
+        --accent-soft: #232a42;
+        --gold: #d6b46a;
+        --border: #2a2f44;
+        --hero-bg: #0b0e19;
+      }
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+      font-size: 17px;
+    }
+    a { color: var(--accent); }
+
+    /* Navigation */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: var(--hero-bg);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .nav-inner {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .nav-name {
+      font-family: "Cormorant Garamond", Georgia, serif;
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: var(--hero-text);
+      text-decoration: none;
+    }
+    .nav-links { display: flex; gap: 18px; flex-wrap: wrap; }
+    .nav-links a {
+      color: var(--hero-muted);
+      text-decoration: none;
+      font-size: 0.92rem;
+      font-weight: 500;
+    }
+    .nav-links a:hover { color: #ffffff; }
+
+    /* Hero */
+    header.hero {
+      background: var(--hero-bg);
+      color: var(--hero-text);
+      padding: 88px 20px 96px;
+      text-align: center;
+    }
+    .hero h1 {
+      font-family: "Cormorant Garamond", Georgia, serif;
+      font-size: clamp(2.6rem, 7vw, 4rem);
+      font-weight: 600;
+      margin: 0 0 8px;
+      letter-spacing: 0.01em;
+    }
+    .hero .tagline {
+      color: var(--hero-muted);
+      font-size: 1.1rem;
+      margin: 0 auto;
+      max-width: 560px;
+    }
+    .hero .moon {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      margin: 0 auto 28px;
+      background: radial-gradient(circle at 35% 35%, #fdf6e3, #d9c58f 70%);
+      box-shadow: 0 0 40px rgba(240, 220, 160, 0.35);
+    }
+
+    /* Sections */
+    section {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 72px 20px;
+      scroll-margin-top: 60px;
+    }
+    section + section { border-top: 1px solid var(--border); }
+    h2 {
+      font-family: "Cormorant Garamond", Georgia, serif;
+      font-size: 2.2rem;
+      font-weight: 600;
+      margin: 0 0 6px;
+    }
+    .section-lead { color: var(--muted); margin: 0 0 32px; }
+    p { margin: 0 0 16px; }
+
+    /* Cards */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 20px;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+    }
+    .card h3 { margin: 0 0 8px; font-size: 1.1rem; }
+    .card p { color: var(--muted); font-size: 0.97rem; margin: 0; }
+    .card.coming-soon { border-style: dashed; }
+    .tag {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--accent);
+      background: var(--accent-soft);
+      padding: 3px 10px;
+      border-radius: 999px;
+      margin-bottom: 12px;
+    }
+
+    /* Writing */
+    .book {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+    }
+    .book h3 {
+      font-family: "Cormorant Garamond", Georgia, serif;
+      font-style: italic;
+      font-size: 1.9rem;
+      font-weight: 600;
+      margin: 0 0 4px;
+    }
+    .book .genre { color: var(--gold); font-weight: 600; font-size: 0.9rem; margin-bottom: 20px; }
+    blockquote {
+      font-family: "Cormorant Garamond", Georgia, serif;
+      font-size: 1.45rem;
+      line-height: 1.4;
+      margin: 28px 0 0;
+      padding-left: 20px;
+      border-left: 3px solid var(--gold);
+    }
+
+    /* Certifications */
+    .cert-group h3 { font-size: 1rem; margin: 0 0 12px; color: var(--muted); font-weight: 600; }
+    .cert-group ul { list-style: none; padding: 0; margin: 0; }
+    .cert-group li {
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.97rem;
+    }
+    .cert-group li:last-child { border-bottom: none; }
+
+    /* Contact */
+    .contact-links { display: flex; gap: 14px; flex-wrap: wrap; }
+    .button {
+      display: inline-block;
+      padding: 12px 22px;
+      border-radius: 8px;
+      background: var(--accent);
+      color: #ffffff;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    @media (prefers-color-scheme: dark) { .button { color: #10131f; } }
+    .button.outline {
+      background: transparent;
+      color: var(--accent);
+      border: 1.5px solid var(--accent);
+    }
+
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.85rem;
+      padding: 32px 20px 48px;
+      border-top: 1px solid var(--border);
+    }
+  </style>
 </head>
 <body>
-    <h1>This is my Portfolio</h1>
+
+  <nav>
+    <div class="nav-inner">
+      <a class="nav-name" href="#top">Matthew Brady</a>
+      <div class="nav-links">
+        <a href="#about">About</a>
+        <a href="#projects">Projects</a>
+        <a href="#writing">Writing</a>
+        <a href="#certifications">Certifications</a>
+        <a href="#contact">Contact</a>
+      </div>
+    </div>
+  </nav>
+
+  <header class="hero" id="top">
+    <div class="moon" aria-hidden="true"></div>
+    <h1>Matthew Brady</h1>
+    <p class="tagline">Technology, AI, and storytelling, from Kansas City.</p>
+  </header>
+
+  <main>
+    <section id="about">
+      <h2>About Me</h2>
+      <p class="section-lead">From hospitality to technology</p>
+      <p>I'm Matthew Brady, and I'm building a career in technology and artificial intelligence. Before tech, I spent many years in fine dining, hospitality, and event planning, including about ten years with Darden Restaurant Group as a Shift Manager, Corporate Trainer, and Private Functions Coordinator.</p>
+      <p>That work taught me how to stay calm under pressure, explain things clearly, and take care of the people in front of me. I bring those same skills to technology. I hold the Cisco Certified Support Technician (CCST) certification, along with seven AI credentials from IBM SkillsBuild and Google, and I'm currently growing my skills through the i.c.stars technology program in Kansas City.</p>
+      <p>Outside of work, I write young adult fantasy.</p>
+    </section>
+
+    <section id="projects">
+      <h2>Projects</h2>
+      <p class="section-lead">What I'm building during the i.c.stars program</p>
+      <div class="grid">
+        <div class="card">
+          <span class="tag">Web</span>
+          <h3>This Portfolio Site</h3>
+          <p>A personal website built with HTML and CSS and hosted on GitHub Pages.</p>
+        </div>
+        <div class="card coming-soon">
+          <span class="tag">Coming Soon</span>
+          <h3>Next Project</h3>
+          <p>New work will be added here as it is completed.</p>
+        </div>
+        <div class="card coming-soon">
+          <span class="tag">Coming Soon</span>
+          <h3>Next Project</h3>
+          <p>New work will be added here as it is completed.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="writing">
+      <h2>Writing</h2>
+      <p class="section-lead">Fiction in progress</p>
+      <div class="book">
+        <h3>The Moonwater Locket</h3>
+        <div class="genre">Young Adult Fantasy</div>
+        <p>In a kingdom where magic carries a death sentence, Aelyn keeps her pointed ears hidden beneath a kerchief and her elven heritage a secret. When a locket tied to her lost lineage awakens, it draws her into the Elderwood and toward a truth she was never meant to find.</p>
+        <p>Told in two voices, the novel follows Aelyn and Gwynn, a street-smart thief whose search through old archives turns up records she would rather not have found.</p>
+        <blockquote>Then the reflection blinked.<br>Aelyn did not.</blockquote>
+      </div>
+    </section>
+
+    <section id="certifications">
+      <h2>Certifications</h2>
+      <p class="section-lead">Networking and artificial intelligence</p>
+      <div class="grid">
+        <div class="card cert-group">
+          <h3>Cisco</h3>
+          <ul>
+            <li>Cisco Certified Support Technician (CCST)</li>
+          </ul>
+        </div>
+        <div class="card cert-group">
+          <h3>IBM SkillsBuild</h3>
+          <ul>
+            <li>Artificial Intelligence Fundamentals</li>
+            <li>AI Fundamentals: Foundations for Understanding AI</li>
+            <li>AI Fundamentals: Language and Vision in AI</li>
+            <li>Explore Emerging Tech</li>
+            <li>Team Essentials for Designing AI Solutions</li>
+          </ul>
+        </div>
+        <div class="card cert-group">
+          <h3>Google / Coursera</h3>
+          <ul>
+            <li>Google AI Essentials</li>
+            <li>Start Writing Prompts Like a Pro</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="contact">
+      <h2>Contact</h2>
+      <p class="section-lead">I'm always happy to connect.</p>
+      <div class="contact-links">
+        <a class="button" href="mailto:m34147485@gmail.com">Email Me</a>
+        <a class="button outline" href="https://www.linkedin.com/in/matthewbrady-ai" target="_blank" rel="noopener">LinkedIn</a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    &copy; 2026 Matthew Brady &middot; Kansas City, Missouri
+  </footer>
+
 </body>
 </html>
