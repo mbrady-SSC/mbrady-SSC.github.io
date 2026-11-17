@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PowerPrompt | Matthew Brady</title>
+<meta name="description" content="Answer a few questions and get a well-written prompt for any AI.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #fdf9f4; --panel: #ffffff; --panel-2: #fffbf6; --line: #ecdfd2;
+    --text: #161b33; --soft: #3b3f5c; --faint: #6f6a85; --accent: #474973; --accent-ink: #ffffff;
+    --glow: #f1dac4; --ph: #a59fb0; --hover: #a69cac; --tint: rgba(71,73,115,.08);
+  }
+  /* ---------- Looks to choose from (temporary: remove the ones not chosen) ---------- */
+  body[data-theme="midnight"] { --bg: #12162b; --panel: #1b2140; --panel-2: #151a33; --line: #2e3558; --text: #f4ece3; --soft: #c9c3d6; --faint: #958fab; --accent: #f1dac4; --accent-ink: #161b33; --glow: #2b3160; --ph: #6c7090; --hover: #5a6190; --tint: rgba(241,218,196,.12); }
+  body[data-theme="fresh"] { --bg: #f6fbf9; --panel: #ffffff; --panel-2: #f3faf7; --line: #d8e9e3; --text: #10231f; --soft: #35504a; --faint: #5f7a73; --accent: #0f766e; --accent-ink: #ffffff; --glow: #cdeee4; --ph: #9bb5ae; --hover: #8fc3b6; --tint: rgba(15,118,110,.08); }
+  body[data-theme="sunrise"] { --bg: #fffaf5; --panel: #ffffff; --panel-2: #fff6ee; --line: #f3dfcd; --text: #2a1a12; --soft: #5a4034; --faint: #8a6c5d; --accent: #c43d17; --accent-ink: #ffffff; --glow: #ffd9b8; --ph: #c4a898; --hover: #eda77f; --tint: rgba(196,61,23,.08); }
+  /* The three new looks use bold, upright lettering so PowerPrompt reads as its own product */
+  body:not([data-theme="site"]) .intro h1 { font-weight: 600; }
+  body:not([data-theme="site"]) .serif { font-family: inherit; font-style: normal; font-weight: 600; font-size: 1em; letter-spacing: -.04em; }
+  body:not([data-theme="site"]) .result-head h2 { font-family: inherit; font-style: normal; font-weight: 600; font-size: 1.3rem; letter-spacing: -.02em; }
+
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { background: radial-gradient(70vw 50vw at 96% -12%, var(--glow) 0, transparent 62%) no-repeat, var(--bg); color: var(--text); font-family: "DM Sans", system-ui, "Segoe UI", sans-serif; line-height: 1.6; font-size: 16px; }
+  a { color: var(--accent); }
+
+  .top { max-width: 1180px; margin: 0 auto; padding: 26px clamp(16px, 4vw, 40px) 0; display: flex; justify-content: space-between; font-size: .8rem; letter-spacing: .14em; text-transform: uppercase; }
+  .top a { color: var(--soft); text-decoration: none; }
+  .top a:hover { color: var(--text); }
+
+  .intro { max-width: 1180px; margin: 0 auto; padding: clamp(36px, 7vh, 72px) clamp(16px, 4vw, 40px) clamp(24px, 4vh, 40px); }
+  .intro h1 { font-weight: 300; font-size: clamp(3.2rem, 9vw, 6rem); line-height: 1; letter-spacing: -.04em; margin: 0 0 16px; }
+  .serif { font-family: "Instrument Serif", Georgia, serif; font-style: italic; font-weight: 400; letter-spacing: -.01em; font-size: 1.07em; color: var(--accent); }
+  .intro p { color: var(--soft); max-width: 620px; margin: 0; font-size: 1.08rem; }
+
+  .layout { max-width: 1180px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 40px) 80px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 28px; align-items: start; }
+  @media (max-width: 860px) { .layout { grid-template-columns: 1fr; } }
+
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 12px 36px rgba(22,27,51,.06); padding: clamp(18px, 3vw, 30px); }
+  .q { margin-bottom: 26px; }
+  .q:last-child { margin-bottom: 0; }
+  .q label, .q .label { display: block; font-weight: 600; margin-bottom: 2px; }
+  .num { color: var(--accent); font-variant-numeric: tabular-nums; margin-right: 6px; }
+  .hint { color: var(--faint); font-size: .88rem; margin: 0 0 10px; }
+  .opt { color: var(--faint); font-weight: 400; font-size: .85rem; }
+  input[type=text], textarea {
+    width: 100%; background: var(--panel-2); color: var(--text); border: 1px solid var(--line); border-radius: 9px;
+    padding: 11px 13px; font: inherit; resize: vertical; }
+  textarea { min-height: 78px; }
+  input[type=text]:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent; }
+  ::placeholder { color: var(--ph); }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chips input { position: absolute; opacity: 0; pointer-events: none; }
+  .chips label { margin: 0; font-weight: 500; font-size: .92rem; padding: 7px 14px; border: 1px solid var(--line); border-radius: 999px; cursor: pointer; color: var(--soft); background: var(--panel-2); user-select: none; }
+  .chips label:hover { color: var(--text); border-color: var(--hover); }
+  .chips input:checked + label { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .chips input:focus-visible + label { outline: 2px solid var(--text); outline-offset: 2px; }
+
+  /* Suggested answers: one click accepts them */
+  .sugg { margin-top: 10px; font-size: .86rem; color: var(--faint); display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .sugg[hidden] { display: none; }
+  .sugg button { font: inherit; font-weight: 500; font-size: .84rem; padding: 5px 13px; border-radius: 999px; border: 1px dashed var(--accent); background: transparent; color: var(--accent); cursor: pointer; }
+  .sugg button:hover { background: var(--tint); }
+  .sugg .ok { color: var(--accent); }
+
+  .more { margin-top: 12px; }
+  .more summary { cursor: pointer; color: var(--accent); font-size: .9rem; font-weight: 500; list-style: none; display: inline-block; }
+  .more summary::-webkit-details-marker { display: none; }
+  .more summary::before { content: "+ "; }
+  .more[open] summary::before { content: "\2013  "; }
+  .more .chips { margin-top: 12px; }
+  .own { margin-top: 12px; }
+  .check { display: flex; gap: 10px; align-items: flex-start; color: var(--soft); font-size: .95rem; cursor: pointer; }
+  .check input { margin-top: 5px; accent-color: var(--accent); }
+
+  .result { position: sticky; top: 20px; }
+  .result-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 12px; }
+  .result-head h2 { font-family: "Instrument Serif", Georgia, serif; font-style: italic; font-weight: 400; font-size: 2rem; color: var(--accent); margin: 0; }
+  .meter { font-size: .8rem; letter-spacing: .1em; text-transform: uppercase; color: var(--faint); }
+  .bar { height: 4px; background: var(--line); border-radius: 4px; overflow: hidden; margin-bottom: 16px; }
+  .bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .25s ease; }
+  #out { white-space: pre-wrap; background: var(--panel-2); border: 1px solid var(--line); border-radius: 9px; padding: 16px; min-height: 220px; font-size: .97rem; margin: 0 0 16px; font-family: inherit; }
+  #out.empty { color: var(--faint); font-style: italic; }
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  button { font: inherit; font-weight: 500; border-radius: 999px; padding: 11px 20px; cursor: pointer; border: 1px solid var(--accent); }
+  .primary { background: var(--accent); color: var(--accent-ink); }
+  .primary:disabled { opacity: .4; cursor: not-allowed; }
+  .ghost { background: transparent; color: var(--soft); border-color: var(--line); }
+  .ghost:hover { color: var(--text); }
+  .tip { color: var(--faint); font-size: .88rem; margin: 16px 0 0; }
+  .privacy { color: var(--faint); font-size: .82rem; margin: 10px 0 0; }
+</style>
+</head>
+<body data-theme="midnight">
+
+<div class="top"><a href="./">Matthew Brady</a><span style="color:var(--faint)">A project</span></div>
+
+<header class="intro">
+  <h1>Power<span class="serif">Prompt</span></h1>
+  <p>A good answer from AI starts with a good question. Answer a few of these, and watch a clear, complete prompt take shape that you can paste into any AI.</p>
+</header>
+
+<main class="layout">
+  <form class="panel" id="form" autocomplete="off">
+
+    <div class="q">
+      <label for="goal"><span class="num">1</span>What do you want the AI to do?</label>
+      <p class="hint">Say it the way you would ask a helpful coworker.</p>
+      <textarea id="goal" placeholder="Write an email inviting my team to a lunch-and-learn about AI"></textarea>
+    </div>
+
+    <div class="q">
+      <label for="audience"><span class="num">2</span>Who is the result for?</label>
+      <p class="hint">The AI writes differently for experts, customers, or kids.</p>
+      <input type="text" id="audience" placeholder="Coworkers who have never used AI">
+    </div>
+
+    <div class="q">
+      <label for="context"><span class="num">3</span>What background should the AI know?</label>
+      <p class="hint">Facts, dates, names, or anything you would have to explain to a new person.</p>
+      <textarea id="context" placeholder="The session is Thursday at noon in the break room. Lunch is provided."></textarea>
+    </div>
+
+    <div class="q">
+      <span class="label"><span class="num">4</span>How should the result look?</span>
+      <p class="hint">Pick as many as you need, open More options, or type your own.</p>
+      <div class="chips" data-name="format">
+        <input type="checkbox" name="format" id="f1" value="short, clear paragraphs" data-kind="part"><label for="f1">Paragraphs</label>
+        <input type="checkbox" name="format" id="f2" value="a bulleted list" data-kind="part"><label for="f2">Bullets</label>
+        <input type="checkbox" name="format" id="f3" value="numbered steps" data-kind="part"><label for="f3">Numbered steps</label>
+        <input type="checkbox" name="format" id="f4" value="a table" data-kind="part"><label for="f4">Table</label>
+        <input type="checkbox" name="format" id="f5" value="an email with a subject line" data-kind="whole"><label for="f5">Email</label>
+        <input type="checkbox" name="format" id="f6" value="a letter" data-kind="whole"><label for="f6">Letter</label>
+        <input type="checkbox" name="format" id="f7" value="a formal business letter" data-kind="whole"><label for="f7">Formal letter</label>
+        <input type="checkbox" name="format" id="f8" value="a short, informal note" data-kind="whole"><label for="f8">Note</label>
+      </div>
+      <details class="more">
+        <summary>More options</summary>
+        <div class="chips">
+        <input type="checkbox" name="format" id="f9" value="a memo" data-kind="whole"><label for="f9">Memo</label>
+        <input type="checkbox" name="format" id="f10" value="a report with headings" data-kind="whole"><label for="f10">Report</label>
+        <input type="checkbox" name="format" id="f11" value="a brief summary" data-kind="whole"><label for="f11">Summary</label>
+        <input type="checkbox" name="format" id="f12" value="an outline" data-kind="whole"><label for="f12">Outline</label>
+        <input type="checkbox" name="format" id="f13" value="a checklist" data-kind="part"><label for="f13">Checklist</label>
+        <input type="checkbox" name="format" id="f14" value="a list of pros and cons" data-kind="part"><label for="f14">Pros and cons</label>
+        <input type="checkbox" name="format" id="f15" value="a list of questions and answers" data-kind="part"><label for="f15">Questions and answers</label>
+        <input type="checkbox" name="format" id="f16" value="a timeline" data-kind="part"><label for="f16">Timeline</label>
+        <input type="checkbox" name="format" id="f17" value="talking points" data-kind="whole"><label for="f17">Talking points</label>
+        <input type="checkbox" name="format" id="f18" value="a speech" data-kind="whole"><label for="f18">Speech</label>
+        <input type="checkbox" name="format" id="f19" value="an outline for presentation slides" data-kind="whole"><label for="f19">Slides</label>
+        <input type="checkbox" name="format" id="f20" value="a meeting agenda" data-kind="whole"><label for="f20">Meeting agenda</label>
+        <input type="checkbox" name="format" id="f21" value="a lesson plan" data-kind="whole"><label for="f21">Lesson plan</label>
+        <input type="checkbox" name="format" id="f22" value="a social media post" data-kind="whole"><label for="f22">Social media post</label>
+        <input type="checkbox" name="format" id="f23" value="a text message" data-kind="whole"><label for="f23">Text message</label>
+        <input type="checkbox" name="format" id="f24" value="a blog post" data-kind="whole"><label for="f24">Blog post</label>
+        <input type="checkbox" name="format" id="f25" value="an essay" data-kind="whole"><label for="f25">Essay</label>
+        <input type="checkbox" name="format" id="f26" value="a story" data-kind="whole"><label for="f26">Story</label>
+        <input type="checkbox" name="format" id="f27" value="a poem" data-kind="whole"><label for="f27">Poem</label>
+        <input type="checkbox" name="format" id="f28" value="a cover letter" data-kind="whole"><label for="f28">Cover letter</label>
+        <input type="checkbox" name="format" id="f29" value="a thank-you note" data-kind="whole"><label for="f29">Thank-you note</label>
+        <input type="checkbox" name="format" id="f30" value="an invitation" data-kind="whole"><label for="f30">Invitation</label>
+        <input type="checkbox" name="format" id="f31" value="an announcement" data-kind="whole"><label for="f31">Announcement</label>
+        <input type="checkbox" name="format" id="f32" value="a press release" data-kind="whole"><label for="f32">Press release</label>
+        <input type="checkbox" name="format" id="f33" value="a product description" data-kind="whole"><label for="f33">Product description</label>
+        <input type="checkbox" name="format" id="f34" value="a job description" data-kind="whole"><label for="f34">Job description</label>
+        <input type="checkbox" name="format" id="f35" value="a recipe" data-kind="whole"><label for="f35">Recipe</label>
+        </div>
+      </details>
+      <input type="text" id="format-own" class="own" placeholder="Or type your own, such as: a toast for a retirement party" aria-label="Type your own format">
+    </div>
+
+    <div class="q">
+      <span class="label"><span class="num">5</span>What tone fits?</span>
+      <p class="hint">Pick one.</p>
+      <div class="chips">
+        <input type="radio" name="tone" id="t1" value="professional"><label for="t1">Professional</label>
+        <input type="radio" name="tone" id="t2" value="friendly and warm"><label for="t2">Friendly</label>
+        <input type="radio" name="tone" id="t3" value="plain and simple, with no jargon"><label for="t3">Plain language</label>
+        <input type="radio" name="tone" id="t4" value="confident and persuasive"><label for="t4">Persuasive</label>
+        <input type="radio" name="tone" id="t5" value="light and playful"><label for="t5">Playful</label>
+      </div>
+    </div>
+
+    <div class="q">
+      <span class="label"><span class="num">6</span>How long should it be?</span>
+      <p class="hint">Pick one.</p>
+      <div class="chips">
+        <input type="radio" name="length" id="l1" value="Keep it brief: a few sentences at most."><label for="l1">Short</label>
+        <input type="radio" name="length" id="l2" value="Aim for a medium length: enough to be complete without padding."><label for="l2">Medium</label>
+        <input type="radio" name="length" id="l3" value="Be thorough and detailed."><label for="l3">Detailed</label>
+      </div>
+    </div>
+
+    <div class="q">
+      <label for="role"><span class="num">7</span>Should the AI act as a kind of expert? <span class="opt">Optional</span></label>
+      <input type="text" id="role" placeholder="An experienced corporate trainer">
+    </div>
+
+    <div class="q">
+      <label for="avoid"><span class="num">8</span>Anything to avoid? <span class="opt">Optional</span></label>
+      <input type="text" id="avoid" placeholder="Buzzwords and exclamation points">
+    </div>
+
+    <div class="q">
+      <label class="check"><input type="checkbox" id="ask" checked><span>Have the AI ask me questions first if anything is unclear. <span class="opt">Recommended</span></span></label>
+    </div>
+  </form>
+
+  <section class="panel result" aria-live="polite">
+    <div class="result-head"><h2>Your prompt</h2><span class="meter" id="meter">0 of 6 essentials</span></div>
+    <div class="bar"><i id="bar"></i></div>
+    <pre id="out" class="empty">Your prompt will appear here as you answer.</pre>
+    <div class="actions">
+      <button type="button" class="primary" id="copy" disabled>Copy prompt</button>
+      <button type="button" class="ghost" id="reset">Start over</button>
+    </div>
+    <p class="tip" id="tip"></p>
+    <p class="privacy">Nothing you type leaves this page. The prompt is built right here in your browser.</p>
+  </section>
+</main>
+
+
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var form = $('form'), out = $('out'), copy = $('copy');
+
+  function val(id) { return $(id).value.trim(); }
+  function pick(name) { var el = form.querySelector('input[name=' + name + ']:checked'); return el ? el.value : ''; }
+  // Make sure a typed answer ends like a sentence
+  // Several formats can be combined, such as an email that contains a table and bullets.
+  // "Whole" formats (email, letter, report) hold "parts" (bullets, table, steps).
+  function listOf(items) {
+    if (items.length < 2) return items.join('');
+    if (items.length === 2) return items.join(' and ');
+    return items.slice(0, -1).join(', ') + ', and ' + items[items.length - 1];
+  }
+  function formatSentence(own) {
+    var wholes = [], parts = [];
+    form.querySelectorAll('input[name=format]:checked').forEach(function (el) { (el.getAttribute('data-kind') === 'part' ? parts : wholes).push(el.value); });
+    var out = [];
+    if (wholes.length && parts.length) out.push('Present the result as ' + listOf(wholes) + '. Inside it, use ' + listOf(parts) + ' where they help.');
+    else if (wholes.length) out.push('Present the result as ' + listOf(wholes) + '.');
+    else if (parts.length) out.push('Present the result using ' + listOf(parts) + '.');
+    if (own) out.push((out.length ? 'Also follow this format request: ' : 'Present the result in this form: ') + sentence(own));
+    return out.join(' ');
+  }
+  function sentence(s) { return /[.!?]$/.test(s) ? s : s + '.'; }
+  function lower(s) { return s.charAt(0).toLowerCase() + s.slice(1); }
+
+  var tips = {
+    goal: 'Start with question 1. The clearer the task, the better the answer.',
+    audience: 'Tip: naming who it is for is the fastest way to improve a prompt.',
+    context: 'Tip: add background. The AI only knows what you tell it.',
+    format: 'Tip: choose a format so the result arrives ready to use.',
+    tone: 'Tip: choose a tone so it sounds right for your reader.',
+    length: 'Tip: choose a length so you do not get a page when you wanted a paragraph.'
+  };
+
+  function build() {
+    var a = { goal: val('goal'), audience: val('audience'), context: val('context'),
+              format: formatSentence(val('format-own')), tone: pick('tone'), length: pick('length'),
+              role: val('role'), avoid: val('avoid') };
+    renderSuggestions(a);
+    var parts = [];
+    if (a.role) parts.push('Act as ' + sentence(lower(a.role)));
+    if (a.goal) parts.push('Your task: ' + sentence(a.goal));
+    if (a.audience) parts.push('Audience: This is for ' + sentence(lower(a.audience)) + ' Write so they can easily understand and use it.');
+    if (a.context) parts.push('Background you should know: ' + sentence(a.context));
+    var style = [];
+    if (a.format) style.push(a.format);
+    if (a.tone) style.push('Use a tone that is ' + a.tone + '.');
+    if (a.length) style.push(a.length);
+    if (style.length) parts.push('How to respond: ' + style.join(' '));
+    if (a.avoid) parts.push('Please avoid: ' + sentence(lower(a.avoid)));
+    if ($('ask').checked && parts.length) parts.push('If anything about this request is unclear, ask me questions before you begin.');
+
+    var essentials = ['goal', 'audience', 'context', 'format', 'tone', 'length'];
+    var done = essentials.filter(function (k) { return a[k]; });
+    var next = essentials.filter(function (k) { return !a[k]; })[0];
+    $('meter').textContent = done.length + ' of 6 essentials';
+    $('bar').style.width = (done.length / 6 * 100) + '%';
+    $('tip').textContent = next ? tips[next] : 'All six essentials are covered. This prompt is ready to use.';
+
+    var has = parts.length > 0 && (a.goal || done.length > 0 || a.role || a.avoid);
+    out.textContent = has ? parts.join('\n\n') : 'Your prompt will appear here as you answer.';
+    out.classList.toggle('empty', !has);
+    copy.disabled = !has;
+  }
+
+
+  // ---- Suggested answers ----
+  // PowerPrompt reads the task and proposes an answer for each remaining question,
+  // so a person can accept with one click instead of deciding from scratch.
+  var FORMAT_RULES = [
+    [/e-?mail/, 'f5', 'Email', 'your task mentions an email'],
+    [/\bcover letter\b/, 'f28', 'Cover letter', 'your task mentions a cover letter'],
+    [/\bpros and cons\b/, 'f14', 'Pros and cons', 'your task mentions a pros and cons'],
+    [/\b(formal|business|complaint|resignation) letter\b/, 'f7', 'Formal letter', 'your task mentions a formal letter'],
+    [/\bthank[- ]you\b/, 'f29', 'Thank-you note', 'your task mentions a thank-you note'],
+    [/\bletter\b/, 'f6', 'Letter', 'your task mentions a letter'],
+    [/\bnote\b/, 'f8', 'Note', 'your task mentions a note'],
+    [/\btalking points\b/, 'f17', 'Talking points', 'your task mentions a talking points'],
+    [/\blesson plan\b/, 'f21', 'Lesson plan', 'your task mentions a lesson plan'],
+    [/\btext message\b/, 'f23', 'Text message', 'your task mentions a text message'],
+    [/\bpress release\b/, 'f32', 'Press release', 'your task mentions a press release'],
+    [/\bproduct description\b/, 'f33', 'Product description', 'your task mentions a product description'],
+    [/\bjob (description|posting)\b/, 'f34', 'Job description', 'your task mentions a job description'],
+    [/\bmemo\b/, 'f9', 'Memo', 'your task mentions a memo'],
+    [/\breport\b/, 'f10', 'Report', 'your task mentions a report'],
+    [/\b(summary|summarize|recap)\b/, 'f11', 'Summary', 'your task mentions a summary'],
+    [/\boutline\b/, 'f12', 'Outline', 'your task mentions an outline'],
+    [/\bchecklist\b/, 'f13', 'Checklist', 'your task mentions a checklist'],
+    [/\b(faq|questions and answers)\b/, 'f15', 'Questions and answers', 'your task mentions a questions and answers'],
+    [/\b(timeline|schedule)\b/, 'f16', 'Timeline', 'your task mentions a timeline'],
+    [/\b(speech|toast)\b/, 'f18', 'Speech', 'your task mentions a speech'],
+    [/\b(slides?|presentation)\b/, 'f19', 'Slides', 'your task mentions a slides'],
+    [/\bagenda\b/, 'f20', 'Meeting agenda', 'your task mentions a meeting agenda'],
+    [/\b(social media|tweet|linkedin post|facebook post|instagram)\b/, 'f22', 'Social media post', 'your task mentions a social media post'],
+    [/\bblog\b/, 'f24', 'Blog post', 'your task mentions a blog post'],
+    [/\bessay\b/, 'f25', 'Essay', 'your task mentions an essay'],
+    [/\bstory\b/, 'f26', 'Story', 'your task mentions a story'],
+    [/\bpoem\b/, 'f27', 'Poem', 'your task mentions a poem'],
+    [/\b(invitation|invite)\b/, 'f30', 'Invitation', 'your task mentions an invitation'],
+    [/\bannounce(ment)?\b/, 'f31', 'Announcement', 'your task mentions an announcement'],
+    [/\brecipe\b/, 'f35', 'Recipe', 'your task mentions a recipe'],
+    [/\b(steps?|how to|instructions?|process)\b/, 'f3', 'Numbered steps', 'your task is a how-to'],
+    [/\b(compare|comparison|versus|vs|options)\b/, 'f4', 'Table', 'tables make comparisons easy to read'],
+    [/\b(list|ideas|tips|examples|brainstorm)\b/, 'f2', 'Bullets', 'your task asks for a list']
+  ];
+  function suggest(a) {
+    var g = a.goal.toLowerCase(), aud = a.audience.toLowerCase(), s = {};
+    var email = /e-?mail/.test(g);
+    s.format = ['f1', 'Paragraphs', 'it is a safe choice for most writing'];
+    for (var i = 0; i < FORMAT_RULES.length; i++) { if (FORMAT_RULES[i][0].test(g)) { s.format = FORMAT_RULES[i].slice(1); break; } }
+
+    if (/\b(kids?|children|students?|beginners?|never used|new to)\b/.test(aud)) s.tone = ['t3', 'Plain language', 'your audience is new to this'];
+    else if (/\b(convince|persuade|pitch|sell|proposal)\b/.test(g)) s.tone = ['t4', 'Persuasive', 'your task is to convince someone'];
+    else if (/\b(friends?|family|team|coworkers?|colleagues?)\b/.test(aud + ' ' + g)) s.tone = ['t2', 'Friendly', 'you are writing to people you know'];
+    else s.tone = ['t1', 'Professional', 'it is a safe choice for work'];
+
+    if (/\b(summary|summarize|brief|quick|short|text message|subject line)\b/.test(g)) s.length = ['l1', 'Short', 'your task asks for something brief'];
+    else if (/\b(report|plan|detailed|in-depth|guide|essay|article)\b/.test(g)) s.length = ['l3', 'Detailed', 'this kind of task needs room'];
+    else if (email) s.length = ['l1', 'Short', 'short emails get read'];
+    else s.length = ['l2', 'Medium', 'it is complete without padding'];
+
+    if (email) s.role = 'An experienced business writer';
+    else if (/\b(teach|explain|lesson|train|tutor)\b/.test(g)) s.role = 'A patient teacher';
+    else if (/\b(market|advertis|social media|post|slogan)\b/.test(g)) s.role = 'A marketing copywriter';
+    else if (/\b(code|program|script|formula|spreadsheet)\b/.test(g)) s.role = 'A senior software developer';
+    else s.role = 'An expert in this subject';
+    return s;
+  }
+
+  // Select an option; if it lives under More options, open that so the choice is visible
+  function choose(id) { var el = $(id); el.checked = true; var m = el.closest('details'); if (m) m.open = true; }
+
+  var boxes = {};
+  function box(key, el) {
+    if (!boxes[key]) { boxes[key] = document.createElement('div'); boxes[key].className = 'sugg'; el.closest('.q').appendChild(boxes[key]); }
+    boxes[key].innerHTML = ''; boxes[key].hidden = false;
+    return boxes[key];
+  }
+  function say(d, text, cls) { var s = document.createElement('span'); s.textContent = text; if (cls) s.className = cls; d.appendChild(s); }
+  function offer(d, label, fn) { var b = document.createElement('button'); b.type = 'button'; b.textContent = label; b.addEventListener('click', function () { fn(); build(); }); d.appendChild(b); }
+
+  function renderSuggestions(a) {
+    var s = suggest(a), has = !!a.goal;
+
+    ['format', 'tone', 'length'].forEach(function (k) {
+      var d = box(k, form.querySelector('input[name=' + k + ']'));
+      if (!has) { d.hidden = true; return; }
+      if ($(s[k][0]).checked) { say(d, '✓ Using the suggestion', 'ok'); return; }
+      say(d, 'Suggested:');
+      offer(d, s[k][1], function () { choose(s[k][0]); });
+      say(d, 'because ' + s[k][2] + '.');
+    });
+
+    var dr = box('role', $('role'));
+    if (!has || a.role) dr.hidden = true;
+    else { say(dr, 'Suggested:'); offer(dr, s.role, function () { $('role').value = s.role; }); }
+
+    var da = box('audience', $('audience'));
+    if (a.audience) da.hidden = true;
+    else {
+      say(da, 'Quick picks:');
+      ['My coworkers', 'My manager', 'A customer', 'Someone new to the topic'].forEach(function (t) { offer(da, t, function () { $('audience').value = t; }); });
+    }
+
+    var dg = box('goal', $('goal'));
+    var open = ['format', 'tone', 'length'].filter(function (k) { var c = form.querySelector('input[name=' + k + ']:checked'); return !c && !(k === 'format' && $('format-own').value.trim()); });
+    if (!has || (!open.length && a.role)) dg.hidden = true;
+    else {
+      say(dg, 'Short on time?');
+      offer(dg, 'Accept all suggestions', function () {
+        open.forEach(function (k) { choose(s[k][0]); });
+        if (!$('role').value.trim()) $('role').value = s.role;
+      });
+    }
+  }
+
+  form.addEventListener('input', build);
+  form.addEventListener('submit', function (e) { e.preventDefault(); });
+
+  copy.addEventListener('click', function () {
+    var text = out.textContent;
+    function ok() { copy.textContent = 'Copied'; setTimeout(function () { copy.textContent = 'Copy prompt'; }, 1600); }
+    function fallback() {
+      var t = document.createElement('textarea'); t.value = text; document.body.appendChild(t); t.select();
+      try { document.execCommand('copy'); ok(); } catch (e) { copy.textContent = 'Select and copy the text above'; }
+      document.body.removeChild(t);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(ok, fallback); else fallback();
+  });
+
+  $('reset').addEventListener('click', function () { form.reset(); build(); $('goal').focus(); });
+
+  build();
+})();
+</script>
+</body>
+</html>
