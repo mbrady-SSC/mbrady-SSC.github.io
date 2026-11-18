@@ -18,6 +18,13 @@
   body[data-theme="midnight"] { --bg: #12162b; --panel: #1b2140; --panel-2: #151a33; --line: #2e3558; --text: #f4ece3; --soft: #c9c3d6; --faint: #958fab; --accent: #f1dac4; --accent-ink: #161b33; --glow: #2b3160; --ph: #6c7090; --hover: #5a6190; --tint: rgba(241,218,196,.12); }
   body[data-theme="fresh"] { --bg: #f6fbf9; --panel: #ffffff; --panel-2: #f3faf7; --line: #d8e9e3; --text: #10231f; --soft: #35504a; --faint: #5f7a73; --accent: #0f766e; --accent-ink: #ffffff; --glow: #cdeee4; --ph: #9bb5ae; --hover: #8fc3b6; --tint: rgba(15,118,110,.08); }
   body[data-theme="sunrise"] { --bg: #fffaf5; --panel: #ffffff; --panel-2: #fff6ee; --line: #f3dfcd; --text: #2a1a12; --soft: #5a4034; --faint: #8a6c5d; --accent: #c43d17; --accent-ink: #ffffff; --glow: #ffd9b8; --ph: #c4a898; --hover: #eda77f; --tint: rgba(196,61,23,.08); }
+  /* Looks built from Matthew's two palettes */
+  body[data-theme="tealdark"] { --bg: #01161e; --panel: #0b2733; --panel-2: #061d27; --line: #1c4252; --text: #eff6e0; --soft: #aec3b0; --faint: #7fa0a0; --accent: #aec3b0; --accent-ink: #01161e; --glow: #124559; --ph: #4f7480; --hover: #598392; --tint: rgba(174,195,176,.12); }
+  body[data-theme="teallight"] { --bg: #eff6e0; --panel: #ffffff; --panel-2: #f7fbee; --line: #cfdcc9; --text: #01161e; --soft: #124559; --faint: #4d7381; --accent: #124559; --accent-ink: #eff6e0; --glow: #aec3b0; --ph: #8fa9a6; --hover: #598392; --tint: rgba(18,69,89,.08); }
+  body[data-theme="aqua"] { --bg: #f4fbfa; --panel: #ffffff; --panel-2: #f2faf9; --line: #cfe3e0; --text: #3b413c; --soft: #4d5650; --faint: #66756f; --accent: #3b413c; --accent-ink: #ffffff; --glow: #daf0ee; --ph: #9db5b2; --hover: #94d1be; --tint: rgba(148,209,190,.25); }
+  body[data-theme="aqua"] .chips input:checked + label { background: #94d1be; border-color: #94d1be; color: #1f2a25; }
+  body[data-theme="aqua"] .bar i { background: #94d1be; }
+  body[data-theme="aqua"] .intro h1 .serif { background: linear-gradient(#94d1be, #94d1be) no-repeat 0 90% / 100% .16em; }
   /* The three new looks use bold, upright lettering so PowerPrompt reads as its own product */
   body:not([data-theme="site"]) .intro h1 { font-weight: 600; }
   body:not([data-theme="site"]) .serif { font-family: inherit; font-style: normal; font-weight: 600; font-size: 1em; letter-spacing: -.04em; }
@@ -29,9 +36,16 @@
   body { background: radial-gradient(70vw 50vw at 96% -12%, var(--glow) 0, transparent 62%) no-repeat, var(--bg); color: var(--text); font-family: "DM Sans", system-ui, "Segoe UI", sans-serif; line-height: 1.6; font-size: 16px; }
   a { color: var(--accent); }
 
-  .top { max-width: 1180px; margin: 0 auto; padding: 26px clamp(16px, 4vw, 40px) 0; display: flex; justify-content: space-between; font-size: .8rem; letter-spacing: .14em; text-transform: uppercase; }
+  .top { max-width: 1180px; margin: 0 auto; padding: 26px clamp(16px, 4vw, 40px) 0; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; font-size: .8rem; letter-spacing: .14em; text-transform: uppercase; }
   .top a { color: var(--soft); text-decoration: none; }
   .top a:hover { color: var(--text); }
+
+  /* ---------- Color picker: visitors choose the palette ---------- */
+  .palette { display: flex; align-items: center; gap: 8px; color: var(--faint); }
+  .palette button { width: 28px; height: 28px; padding: 0; border-radius: 50%; border: 2px solid var(--panel); box-shadow: 0 0 0 1px var(--line); cursor: pointer; }
+  .palette button:hover { transform: scale(1.12); }
+  .palette button.on { box-shadow: 0 0 0 2px var(--accent); }
+  .palette button:focus-visible { outline: 2px solid var(--text); outline-offset: 3px; }
 
   .intro { max-width: 1180px; margin: 0 auto; padding: clamp(36px, 7vh, 72px) clamp(16px, 4vw, 40px) clamp(24px, 4vh, 40px); }
   .intro h1 { font-weight: 300; font-size: clamp(3.2rem, 9vw, 6rem); line-height: 1; letter-spacing: -.04em; margin: 0 0 16px; }
@@ -97,9 +111,17 @@
   .privacy { color: var(--faint); font-size: .82rem; margin: 10px 0 0; }
 </style>
 </head>
-<body data-theme="midnight">
+<body data-theme="fresh">
 
-<div class="top"><a href="./">Matthew Brady</a><span style="color:var(--faint)">A project</span></div>
+<div class="top"><a href="./">Matthew Brady</a><div class="palette" id="palette" role="group" aria-label="Choose a color palette">
+    <span>Colors</span>
+    <button type="button" data-look="fresh" title="Fresh" aria-label="Fresh" style="background:linear-gradient(135deg,#f6fbf9 50%,#0f766e 50%)"></button>
+    <button type="button" data-look="sunrise" title="Sunrise" aria-label="Sunrise" style="background:linear-gradient(135deg,#fffaf5 50%,#c43d17 50%)"></button>
+    <button type="button" data-look="aqua" title="Aqua" aria-label="Aqua" style="background:linear-gradient(135deg,#ffffff 50%,#94d1be 50%)"></button>
+    <button type="button" data-look="teallight" title="Teal, light" aria-label="Teal, light" style="background:linear-gradient(135deg,#eff6e0 50%,#124559 50%)"></button>
+    <button type="button" data-look="tealdark" title="Teal, dark" aria-label="Teal, dark" style="background:linear-gradient(135deg,#01161e 50%,#aec3b0 50%)"></button>
+    <button type="button" data-look="midnight" title="Midnight" aria-label="Midnight" style="background:linear-gradient(135deg,#12162b 50%,#f1dac4 50%)"></button>
+  </div></div>
 
 <header class="intro">
   <h1>Power<span class="serif">Prompt</span></h1>
@@ -224,6 +246,27 @@
     <p class="privacy">Nothing you type leaves this page. The prompt is built right here in your browser.</p>
   </section>
 </main>
+
+<script>
+// Color picker: Fresh is the starting look; a visitor's choice is remembered on their device
+(function () {
+  var group = document.getElementById('palette');
+  var names = Array.prototype.map.call(group.querySelectorAll('button'), function (b) { return b.getAttribute('data-look'); });
+  function set(name, save) {
+    if (names.indexOf(name) < 0) name = 'fresh';
+    document.body.setAttribute('data-theme', name);
+    group.querySelectorAll('button').forEach(function (b) {
+      var on = b.getAttribute('data-look') === name;
+      b.classList.toggle('on', on); b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+    if (save) { try { localStorage.setItem('powerprompt-colors', name); } catch (e) {} }
+  }
+  var saved = null; try { saved = localStorage.getItem('powerprompt-colors'); } catch (e) {}
+  set(saved || 'fresh', false);
+  group.addEventListener('click', function (e) { var n = e.target.getAttribute && e.target.getAttribute('data-look'); if (n) set(n, true); });
+})();
+</script>
+
 
 
 
