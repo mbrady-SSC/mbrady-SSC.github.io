@@ -107,6 +107,7 @@
   .primary:disabled { opacity: .4; cursor: not-allowed; }
   .ghost { background: transparent; color: var(--soft); border-color: var(--line); }
   .ghost:hover { color: var(--text); }
+  .gain { color: var(--accent); font-weight: 500; font-size: .92rem; margin: -6px 0 14px; min-height: 1.2em; }
   .tip { color: var(--faint); font-size: .88rem; margin: 16px 0 0; }
   .privacy { color: var(--faint); font-size: .82rem; margin: 10px 0 0; }
 </style>
@@ -230,7 +231,9 @@
     </div>
 
     <div class="q">
-      <label class="check"><input type="checkbox" id="ask" checked><span>Have the AI ask me questions first if anything is unclear. <span class="opt">Recommended</span></span></label>
+      <label class="check"><input type="checkbox" id="ask" checked><span>Have the AI confirm the task and ask me questions first. <span class="opt">Recommended</span></span></label>
+      <label class="check" style="margin-top:10px"><input type="checkbox" id="check" checked><span>Have the AI check its own work before answering. <span class="opt">Recommended</span></span></label>
+      <label class="check" style="margin-top:10px"><input type="checkbox" id="two"><span>Ask for two different versions to choose from.</span></label>
     </div>
   </form>
 
@@ -238,6 +241,7 @@
     <div class="result-head"><h2>Your prompt</h2><span class="meter" id="meter">0 of 6 essentials</span></div>
     <div class="bar"><i id="bar"></i></div>
     <pre id="out" class="empty">Your prompt will appear here as you answer.</pre>
+    <p class="gain" id="gain"></p>
     <div class="actions">
       <button type="button" class="primary" id="copy" disabled>Copy prompt</button>
       <button type="button" class="ghost" id="reset">Start over</button>
@@ -289,7 +293,7 @@
     var wholes = [], parts = [];
     form.querySelectorAll('input[name=format]:checked').forEach(function (el) { (el.getAttribute('data-kind') === 'part' ? parts : wholes).push(el.value); });
     var out = [];
-    if (wholes.length && parts.length) out.push('Present the result as ' + listOf(wholes) + '. Inside it, use ' + listOf(parts) + ' where they help.');
+    if (wholes.length && parts.length) out.push('Present the result as ' + listOf(wholes) + '. Inside it, use ' + listOf(parts) + (parts.length > 1 ? ' where they help.' : ' where it helps.'));
     else if (wholes.length) out.push('Present the result as ' + listOf(wholes) + '.');
     else if (parts.length) out.push('Present the result using ' + listOf(parts) + '.');
     if (own) out.push((out.length ? 'Also follow this format request: ' : 'Present the result in this form: ') + sentence(own));
@@ -297,6 +301,69 @@
   }
   function sentence(s) { return /[.!?]$/.test(s) ? s : s + '.'; }
   function lower(s) { return s.charAt(0).toLowerCase() + s.slice(1); }
+
+  // ---- What PowerPrompt knows ----
+  // This is the expertise the tool adds on top of the person's own words:
+  // what makes each kind of result good, and how to write for each kind of reader.
+  var FORMAT_TIPS = {
+    'Paragraphs': 'Lead each paragraph with its main point, and keep paragraphs short.',
+    'Bullets': 'One idea per bullet, each starting with its key word or action, all worded the same way.',
+    'Numbered steps': 'One action per step, in the order it is done, each starting with a verb.',
+    'Table': 'Give every column a clear heading, keep each cell brief, and say what the rows represent.',
+    'Email': 'Write a specific subject line. Open with the reason for writing. Make any request or next step unmistakable, with dates and times. End with a short, courteous sign-off.',
+    'Letter': 'Use a greeting and a closing, and keep to one idea per paragraph.',
+    'Formal letter': 'Use standard business layout: date, recipient, formal greeting, body, formal closing, and a signature line.',
+    'Note': 'Keep it personal and brief: a few sentences.',
+    'Memo': 'Start with To, From, Date, and Subject lines, then state the purpose in the first sentence.',
+    'Report': 'Open with a short summary of the conclusion, then use sections with clear headings.',
+    'Summary': 'Lead with the single most important point, and leave out detail that would not change the reader’s understanding.',
+    'Outline': 'Show the main points and the supporting points under each, in a logical order.',
+    'Checklist': 'Make every item a concrete action someone can tick off.',
+    'Pros and cons': 'Give both sides equal care and equal detail.',
+    'Questions and answers': 'Use the questions this audience would really ask, in their own words.',
+    'Timeline': 'List dates or stages in order, with what happens at each one.',
+    'Talking points': 'Write short phrases I can glance at while speaking, not sentences to read aloud.',
+    'Speech': 'Write for the ear: short sentences, a natural rhythm, a clear opening, and a memorable close. Tell me roughly how long it takes to deliver.',
+    'Slides': 'One idea per slide: a title and no more than four short points. Put speaker notes separately.',
+    'Meeting agenda': 'List each topic with a time allowance and the outcome wanted from it.',
+    'Lesson plan': 'Include the objective, materials, timed steps, and a way to check understanding.',
+    'Social media post': 'Put the hook in the first line and keep it short. Suggest hashtags only if they are useful.',
+    'Text message': 'Keep it brief and natural, the way a person really texts.',
+    'Blog post': 'Include a headline, an opening that earns attention, subheadings, and a clear takeaway.',
+    'Essay': 'State a clear thesis, support it with reasons and evidence, and end with a conclusion that does more than repeat.',
+    'Story': 'Give it characters, a setting, a problem, and a resolution, and show what happens instead of only describing it.',
+    'Poem': 'Choose a form and keep to it, and favor concrete images over abstract statements.',
+    'Cover letter': 'Connect my experience to what the role needs, use specific examples over general claims, and stay under one page.',
+    'Thank-you note': 'Name the specific thing I am grateful for and say why it mattered.',
+    'Invitation': 'Cover what, when, where, why it is worth coming, and how to reply.',
+    'Announcement': 'Lead with the news, then say what changes, when, and whom to ask.',
+    'Press release': 'Use a headline, a first paragraph covering who, what, when, where, and why, a quotation, and a closing paragraph about the organization.',
+    'Product description': 'Put the benefits to the buyer before the features.',
+    'Job description': 'Include a summary of the role, responsibilities, qualifications, and how to apply.',
+    'Recipe': 'List ingredients with amounts, then numbered steps, with total time and number of servings.'
+  };
+  var TONE = {
+    t1: 'Tone: professional. Be clear, respectful, and direct, without stiffness or corporate jargon.',
+    t2: 'Tone: friendly and warm. Write the way a thoughtful person talks, with plain words and contractions.',
+    t3: 'Tone: plain language. Use short sentences and everyday words. If a technical term cannot be avoided, explain it.',
+    t4: 'Tone: confident and persuasive. Lead with the benefit to the reader, give reasons, and end with a clear call to action. Do not exaggerate.',
+    t5: 'Tone: light and playful. Some humor is welcome, as long as the message stays clear.'
+  };
+  var LENGTH = {
+    l1: 'Length: short. About three to five sentences, or under 100 words.',
+    l2: 'Length: medium. Roughly 150 to 300 words: complete, with no padding.',
+    l3: 'Length: detailed. Cover the topic thoroughly, in sections if that helps, without repeating yourself.'
+  };
+  function audienceAdvice(aud) {
+    var t = aud.toLowerCase();
+    if (/\b(kids?|children|students?|teens?)\b/.test(t)) return 'Use simple words and concrete, familiar examples.';
+    if (/\b(beginners?|never used|new to|non-technical|nontechnical)\b/.test(t)) return 'Assume no background knowledge: define any term they might not know and use an example.';
+    if (/\b(manager|boss|executives?|leadership|director|ceo|vp)\b/.test(t)) return 'They are busy: put the conclusion or request first and keep supporting detail short.';
+    if (/\b(customers?|clients?|guests?)\b/.test(t)) return 'Be courteous, never blame the reader, and be clear about what happens next.';
+    if (/\b(coworkers?|colleagues?|team|staff)\b/.test(t)) return 'Write as a colleague speaking to colleagues, not as an announcement from above.';
+    return 'Think about what they already know, what they need from this, and what they will do with it, and write for that.';
+  }
+  function countWords(s) { s = s.trim(); return s ? s.split(/\s+/).length : 0; }
 
   var tips = {
     goal: 'Start with question 1. The clearer the task, the better the answer.',
@@ -313,17 +380,27 @@
               role: val('role'), avoid: val('avoid') };
     renderSuggestions(a);
     var parts = [];
-    if (a.role) parts.push('Act as ' + sentence(lower(a.role)));
-    if (a.goal) parts.push('Your task: ' + sentence(a.goal));
-    if (a.audience) parts.push('Audience: This is for ' + sentence(lower(a.audience)) + ' Write so they can easily understand and use it.');
-    if (a.context) parts.push('Background you should know: ' + sentence(a.context));
+    var chosen = Array.prototype.map.call(form.querySelectorAll('input[name=format]:checked'), function (el) { return form.querySelector('label[for=' + el.id + ']').textContent; });
+    var toneEl = form.querySelector('input[name=tone]:checked'), lenEl = form.querySelector('input[name=length]:checked');
+
+    if (a.role) parts.push('ROLE\nAct as ' + sentence(lower(a.role)) + ' Bring the judgment of someone who has done this many times, and make the choices an expert would make without being asked.');
+    if (a.goal) parts.push('TASK\n' + sentence(a.goal) + ' The result should be finished and ready to use as written, with no blanks or placeholders left for me to fill in.');
+    if (a.audience) parts.push('AUDIENCE\nThis is for ' + sentence(lower(a.audience)) + ' ' + audienceAdvice(a.audience));
+    if (a.context) parts.push('BACKGROUND\n' + sentence(a.context) + ' Use these facts exactly as given. Do not invent names, dates, numbers, or details that I have not provided.');
+    if (a.format) {
+      var guide = chosen.filter(function (c) { return FORMAT_TIPS[c]; }).map(function (c) { return '- ' + c + ': ' + FORMAT_TIPS[c]; });
+      parts.push('FORMAT\n' + a.format + (guide.length ? '\n' + guide.join('\n') : ''));
+    }
     var style = [];
-    if (a.format) style.push(a.format);
-    if (a.tone) style.push('Use a tone that is ' + a.tone + '.');
-    if (a.length) style.push(a.length);
-    if (style.length) parts.push('How to respond: ' + style.join(' '));
-    if (a.avoid) parts.push('Please avoid: ' + sentence(lower(a.avoid)));
-    if ($('ask').checked && parts.length) parts.push('If anything about this request is unclear, ask me questions before you begin.');
+    if (toneEl) style.push(TONE[toneEl.id]);
+    if (lenEl) style.push(LENGTH[lenEl.id]);
+    if (style.length) parts.push('TONE AND LENGTH\n' + style.join('\n'));
+    if (a.avoid) parts.push('AVOID\n' + sentence(a.avoid) + ' Also avoid filler, clichés, and repeating my instructions back to me.');
+    var work = [];
+    if ($('ask').checked) work.push('- Before you begin, tell me in one sentence what you understand the task to be. If anything important is missing or unclear, ask me up to three questions and wait for my answers.');
+    if ($('check').checked) work.push('- Before you show me the result, check it against every instruction above and fix anything that does not fit.');
+    if ($('two').checked) work.push('- Give me two versions that take noticeably different approaches, so I can choose.');
+    if (work.length && parts.length) parts.push('HOW TO WORK\n' + work.join('\n'));
 
     var essentials = ['goal', 'audience', 'context', 'format', 'tone', 'length'];
     var done = essentials.filter(function (k) { return a[k]; });
@@ -336,6 +413,8 @@
     out.textContent = has ? parts.join('\n\n') : 'Your prompt will appear here as you answer.';
     out.classList.toggle('empty', !has);
     copy.disabled = !has;
+    var typed = countWords([a.goal, a.audience, a.context, a.role, a.avoid, val('format-own')].join(' '));
+    $('gain').textContent = has ? 'You typed ' + typed + (typed === 1 ? ' word' : ' words') + '. PowerPrompt turned them into a ' + countWords(out.textContent) + '-word prompt.' : '';
   }
 
 
