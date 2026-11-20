@@ -90,6 +90,22 @@
   .more[open] summary::before { content: "\2013  "; }
   .more .chips { margin-top: 12px; }
   .own { margin-top: 12px; }
+  /* ---------- Optional AI help (only shown when a local model is found) ---------- */
+  .ai { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: .82rem; color: var(--faint); }
+  .ai[hidden], .ai-box[hidden] { display: none; }
+  .ai button { font-size: .86rem; font-weight: 500; padding: 7px 15px; border-radius: 999px; border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); cursor: pointer; }
+  .ai button.alt { background: transparent; color: var(--accent); }
+  .ai button:disabled { opacity: .5; cursor: wait; }
+  .ai-box { margin-top: 12px; border: 1px solid var(--accent); border-radius: 12px; padding: 14px 16px; background: var(--tint); }
+  .ai-title { font-size: .76rem; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); font-weight: 600; margin-bottom: 6px; }
+  .ai-text { white-space: pre-wrap; }
+  .ai-q { margin-bottom: 12px; }
+  .ai-q label { display: block; font-weight: 500; margin-bottom: 5px; }
+  .ai-q input { background: var(--panel); }
+  .ai-acts { margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .ai-acts button { font-size: .86rem; font-weight: 500; padding: 6px 15px; background: transparent; color: var(--accent); cursor: pointer; }
+  .ai-acts button:first-child { background: var(--accent); color: var(--accent-ink); }
+
   .check { display: flex; gap: 10px; align-items: flex-start; color: var(--soft); font-size: .95rem; cursor: pointer; }
   .check input { margin-top: 5px; accent-color: var(--accent); }
 
@@ -136,6 +152,12 @@
       <label for="goal"><span class="num">1</span>What do you want the AI to do?</label>
       <p class="hint">Say it the way you would ask a helpful coworker.</p>
       <textarea id="goal" placeholder="Write an email inviting my team to a lunch-and-learn about AI"></textarea>
+      <div class="ai" id="ai" hidden>
+        <button type="button" id="ai-sharpen">Improve my wording with AI</button>
+        <button type="button" id="ai-missing" class="alt">What am I missing?</button>
+        <span>The AI runs on this computer. Nothing is sent to the internet.</span>
+      </div>
+      <div class="ai-box" id="ai-box" hidden aria-live="polite"></div>
     </div>
 
     <div class="q">
@@ -310,7 +332,7 @@
     'Bullets': 'One idea per bullet, each starting with its key word or action, all worded the same way.',
     'Numbered steps': 'One action per step, in the order it is done, each starting with a verb.',
     'Table': 'Give every column a clear heading, keep each cell brief, and say what the rows represent.',
-    'Email': 'Write a specific subject line. Open with the reason for writing. Make any request or next step unmistakable, with dates and times. End with a short, courteous sign-off.',
+    'Email': 'Write a specific subject line. Open with the reason for writing. If there is a request or a next step, make it unmistakable, with dates and times. End with a short, courteous sign-off.',
     'Letter': 'Use a greeting and a closing, and keep to one idea per paragraph.',
     'Formal letter': 'Use standard business layout: date, recipient, formal greeting, body, formal closing, and a signature line.',
     'Note': 'Keep it personal and brief: a few sentences.',
@@ -358,10 +380,19 @@
     var t = aud.toLowerCase();
     if (/\b(kids?|children|students?|teens?)\b/.test(t)) return 'Use simple words and concrete, familiar examples.';
     if (/\b(beginners?|never used|new to|non-technical|nontechnical)\b/.test(t)) return 'Assume no background knowledge: define any term they might not know and use an example.';
-    if (/\b(manager|boss|executives?|leadership|director|ceo|vp)\b/.test(t)) return 'They are busy: put the conclusion or request first and keep supporting detail short.';
+    if (/\b(manager|boss|executives?|leadership|director|ceo|vp)\b/.test(t)) return 'They are busy: put the main point first and keep supporting detail short.';
     if (/\b(customers?|clients?|guests?)\b/.test(t)) return 'Be courteous, never blame the reader, and be clear about what happens next.';
     if (/\b(coworkers?|colleagues?|team|staff)\b/.test(t)) return 'Write as a colleague speaking to colleagues, not as an announcement from above.';
     return 'Think about what they already know, what they need from this, and what they will do with it, and write for that.';
+  }
+  // Advice that depends on why the person is writing
+  function purposeAdvice(goal) {
+    var t = goal.toLowerCase();
+    if (/\b(thank|thanks|appreciat\w*|grateful|gratitude)\b/.test(t)) return ' Because this is a message of thanks, name the specific things I am grateful for and say why they mattered. Keep it sincere and plain, not flowery.';
+    if (/\b(apolog\w*|sorry)\b/.test(t)) return ' Because this is an apology, take responsibility plainly, without excuses, and say what will be done differently.';
+    if (/\b(complain\w*|complaint)\b/.test(t)) return ' Because this is a complaint, state the facts calmly, say what outcome I want, and stay courteous.';
+    if (/\b(declin\w*|turn down|say no|reject\w*)\b/.test(t)) return ' Because this delivers a no, say it clearly and early, be kind, and do not over-explain.';
+    return '';
   }
   function countWords(s) { s = s.trim(); return s ? s.split(/\s+/).length : 0; }
 
@@ -384,7 +415,7 @@
     var toneEl = form.querySelector('input[name=tone]:checked'), lenEl = form.querySelector('input[name=length]:checked');
 
     if (a.role) parts.push('ROLE\nAct as ' + sentence(lower(a.role)) + ' Bring the judgment of someone who has done this many times, and make the choices an expert would make without being asked.');
-    if (a.goal) parts.push('TASK\n' + sentence(a.goal) + ' The result should be finished and ready to use as written, with no blanks or placeholders left for me to fill in.');
+    if (a.goal) parts.push('TASK\n' + sentence(a.goal) + ' The result should be finished and ready to use as written, with no blanks or placeholders left for me to fill in.' + purposeAdvice(a.goal));
     if (a.audience) parts.push('AUDIENCE\nThis is for ' + sentence(lower(a.audience)) + ' ' + audienceAdvice(a.audience));
     if (a.context) parts.push('BACKGROUND\n' + sentence(a.context) + ' Use these facts exactly as given. Do not invent names, dates, numbers, or details that I have not provided.');
     if (a.format) {
@@ -527,6 +558,117 @@
       });
     }
   }
+
+  // ---- Optional: improve wording with an AI model running on this computer ----
+  // PowerPrompt looks for Ollama (a program that runs AI models locally). If it finds the
+  // model named below, two extra buttons appear under the first question. If not, nothing
+  // changes and PowerPrompt works as usual. To use a different model, change AI.model.
+  var AI = { url: 'http://localhost:11434', model: 'gemma3:4b' };
+  var aiBar = $('ai'), aiBox = $('ai-box'), aiBusy = false, aiWarm = false;
+
+  function aiAvailable() {
+    var ctl = new AbortController(), timer = setTimeout(function () { ctl.abort(); }, 1500);
+    return fetch(AI.url + '/api/tags', { signal: ctl.signal })
+      .then(function (r) { return r.json(); })
+      .then(function (d) { clearTimeout(timer); return (d.models || []).some(function (m) { return m.name === AI.model; }); })
+      .catch(function () { return false; });
+  }
+  // Send a request and report the answer as it is written, word by word
+  function aiAsk(prompt, limit, onText) {
+    return fetch(AI.url + '/api/generate', { method: 'POST', body: JSON.stringify({ model: AI.model, prompt: prompt, stream: true, options: { temperature: 0.2, num_predict: limit } }) })
+      .then(function (res) {
+        if (!res.ok || !res.body) throw new Error('AI request failed');
+        var reader = res.body.getReader(), dec = new TextDecoder(), buf = '', text = '';
+        function pump() {
+          return reader.read().then(function (step) {
+            if (step.done) return text;
+            buf += dec.decode(step.value, { stream: true });
+            var lines = buf.split('\n'); buf = lines.pop();
+            lines.forEach(function (ln) { if (!ln.trim()) return; try { var j = JSON.parse(ln); if (j.response) { text += j.response; onText(text); } } catch (e) {} });
+            return pump();
+          });
+        }
+        return pump();
+      });
+  }
+  // Small models sometimes add a chatty opening line or quotation marks; remove them
+  function tidy(t) { return t.replace(/^\s*(okay|sure|certainly|here)[^\n:]*:\s*/i, '').replace(/^[\s"“]+|[\s"”]+$/g, ''); }
+
+  function aiPanel(title) {
+    aiBox.hidden = false; aiBox.innerHTML = '';
+    var h = document.createElement('div'); h.className = 'ai-title'; h.textContent = title;
+    var body = document.createElement('div'); body.className = 'ai-text'; body.textContent = 'Thinking… this takes about ten seconds.';
+    var acts = document.createElement('div'); acts.className = 'ai-acts';
+    aiBox.appendChild(h); aiBox.appendChild(body); aiBox.appendChild(acts);
+    return { body: body, acts: acts };
+  }
+  function aiAction(acts, label, fn) { var b = document.createElement('button'); b.type = 'button'; b.textContent = label; b.addEventListener('click', fn); acts.appendChild(b); }
+  function aiLock(on) { aiBusy = on; aiBar.querySelectorAll('button').forEach(function (b) { b.disabled = on; }); }
+
+  function aiRun(kind) {
+    var goal = val('goal');
+    if (aiBusy) return;
+    if (!goal) { $('goal').focus(); return; }
+    aiLock(true);
+    var sharpen = kind === 'sharpen';
+    var ui = aiPanel(sharpen ? 'Suggested wording' : 'Questions worth answering');
+    var prompt = sharpen
+      ? 'Rewrite the task below as one clear, specific sentence that an AI assistant could act on. Keep the meaning. Use only the facts given and add nothing new. Reply with the sentence only: no introduction and no quotation marks.\n\nTask: ' + goal +
+        '\nAudience: ' + (val('audience') || 'not stated') + '\nBackground: ' + (val('context') || 'not stated')
+      : 'A person wants an AI assistant to do the task below. List up to three short questions about real-world details of the situation that are missing and that the writer would need, such as who, why, how long, what to bring, how to reply, or deadlines. Do not ask about anything already stated. Do not ask about tone, format, length, subject lines, or wording, and do not ask the person to write anything. Reply with the questions only, one per line, with no numbering and no introduction.\n\nTask: ' + goal +
+        '\nAudience: ' + (val('audience') || 'not stated') + '\nBackground: ' + (val('context') || 'not stated');
+    aiAsk(prompt, sharpen ? 90 : 120, function (t) { ui.body.textContent = tidy(t); })
+      .then(function (t) {
+        t = tidy(t);
+        if (!t) { ui.body.textContent = 'The AI returned nothing. Please try again.'; aiAction(ui.acts, 'Close', function () { aiBox.hidden = true; }); return; }
+        if (sharpen) {
+          ui.body.textContent = t;
+          aiAction(ui.acts, 'Use this', function () { $('goal').value = t.split('\n')[0]; aiBox.hidden = true; build(); });
+          aiAction(ui.acts, 'Keep mine', function () { aiBox.hidden = true; });
+          return;
+        }
+        // Each question gets its own answer box; answers are added to the Background question
+        var questions = t.split('\n').map(function (q) { return q.replace(/^[\s\-\*\d\.\)]+/, '').trim(); }).filter(function (q) { return q.length > 3; }).slice(0, 3);
+        ui.body.textContent = '';
+        var fields = questions.map(function (q, i) {
+          var wrap = document.createElement('div'); wrap.className = 'ai-q';
+          var label = document.createElement('label'); label.textContent = q; label.setAttribute('for', 'ai-answer-' + i);
+          var input = document.createElement('input'); input.type = 'text'; input.id = 'ai-answer-' + i; input.placeholder = 'Type your answer, or leave blank to skip';
+          wrap.appendChild(label); wrap.appendChild(input); ui.body.appendChild(wrap);
+          return { q: q, input: input };
+        });
+        function addAnswers() {
+          var lines = fields.filter(function (f) { return f.input.value.trim(); }).map(function (f) { var v = f.input.value.trim(); return f.q + ' ' + sentence(v.charAt(0).toUpperCase() + v.slice(1)); });
+          if (!lines.length) { fields[0].input.focus(); return; }
+          var box = $('context'), existing = box.value.trim();
+          box.value = (existing ? sentence(existing) + '\n' : '') + lines.join('\n');
+          aiBox.hidden = true; build();
+          box.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        }
+        fields.forEach(function (f) { f.input.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); addAnswers(); } }); });
+        aiAction(ui.acts, 'Add answers to my prompt', addAnswers);
+        aiAction(ui.acts, 'Close', function () { aiBox.hidden = true; });
+        if (fields.length) fields[0].input.focus();
+      })
+      .catch(function () {
+        ui.body.textContent = 'The AI on this computer did not respond. PowerPrompt still works without it.';
+        aiAction(ui.acts, 'Close', function () { aiBox.hidden = true; });
+      })
+      .then(function () { aiLock(false); });
+  }
+
+  aiAvailable().then(function (ok) {
+    if (!ok) return;
+    aiBar.hidden = false;
+    $('ai-sharpen').addEventListener('click', function () { aiRun('sharpen'); });
+    $('ai-missing').addEventListener('click', function () { aiRun('missing'); });
+    // Load the model quietly when the person starts on the first question, so the first answer is quicker
+    $('goal').addEventListener('focus', function () {
+      if (aiWarm) return; aiWarm = true;
+      fetch(AI.url + '/api/generate', { method: 'POST', body: JSON.stringify({ model: AI.model }) }).catch(function () {});
+    });
+  });
+  $('reset').addEventListener('click', function () { aiBox.hidden = true; });
 
   form.addEventListener('input', build);
   form.addEventListener('submit', function (e) { e.preventDefault(); });
